@@ -41,8 +41,8 @@ print(amp_aa_sequences[:3])
 print(non_amp_ids[:3])
 print(non_amp_aa_sequences[:3])
 
-torch.save(amp_aa_sequences, 'amp_aa_sequences.pt')
-torch.save(non_amp_aa_sequences, 'non_amp_aa_sequences.pt')
+# torch.save(amp_aa_sequences, 'amp_aa_sequences.pt')
+# torch.save(non_amp_aa_sequences, 'non_amp_aa_sequences.pt')
 
 
 

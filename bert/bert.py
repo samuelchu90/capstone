@@ -35,16 +35,31 @@ model_arc['state_dict']['mlp.layers.0.bias'] = model_arc['state_dict']['mlp.bias
 del model_arc['state_dict']['mlp.weight']
 del model_arc['state_dict']['mlp.bias']
 
+print(config)
+
 model.load_state_dict(model_arc['state_dict'], strict=True)
 print(model)
-#model.load_state_dict(torch.load('bert.bin', map_location=torch.device('cpu'))) #errorr
 
+class FullModel(torch.nn.Module):
+    def __init__(self, bert):
+        super().__init__()
+        self.bert = bert
+        self.linear = nn.Linear(768, 1)
+
+    def forward(self, x):
+        mask = (x>0).float()
+        pooler_output = self.bert(x, attention_mask=mask).pooler_output
+        return self.linear(pooler_output)
 
 amp_aa_sequences = torch.load('data/amp_aa_sequences.pt')
 non_amp_aa_sequences = torch.load('data/non_amp_aa_sequences.pt')
-smaller_amp_aa_sequences = amp_aa_sequences[:5]
-with torch.no_grad():
-    outputs = model(smaller_amp_aa_sequences)
+smaller_amp_aa_sequences = amp_aa_sequences[:1]
 
-first_output = outputs[0]
-print(first_output)
+full_model = FullModel(model)
+outputs = full_model(smaller_amp_aa_sequences)
+
+print(outputs)
+#print(outputs.pooler_output.shape, outputs.last_hidden_state.shape)
+
+ #batch size x #tokens x #d_model multiply this matrix by #d_model x 1
+#binary cross entropy

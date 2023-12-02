@@ -5,13 +5,14 @@ from sklearn.model_selection import train_test_split
 aa_map = {
     'A': 1, 'C': 2, 'D': 3, 'E': 4, 'F': 5, 'G': 6, 'H': 7, 'I': 8, 'K': 9,
     'L': 10, 'M': 11, 'N': 12, 'P': 13, 'Q': 14, 'R': 15, 'S': 16, 'T': 17,
-    'V': 18, 'W': 19, 'Y': 20
+    'V': 18, 'W': 19, 'Y': 20, '[CLS]': 21, '[SEP]': 22 
 }
 
 def peptide_to_int(peptide):
     result = []
     for aa in peptide:
         result.append(aa_map[aa])
+    result = [21] + result + [22]
     return result
 
 
@@ -30,7 +31,7 @@ def fa_to_list(fa_path, label):
                 ids.append(line[1:-1])
             else:
                 peptide = line[:-1]
-                new_rep = peptide_to_int(peptide) + [0]*(max_length-len(peptide))
+                new_rep = peptide_to_int(peptide) + [0]*(max_length-(len(peptide)+2)) #+2 for the [CLS] and [SEP] tokens
                 aa_sequences.append(new_rep)
                 labels.append(label)
     aa_sequences = torch.tensor(aa_sequences, dtype=torch.long)
@@ -76,7 +77,7 @@ def train_test_split(sequences, labels):
     y_train = labels[split_idx:]
     return X_train, X_test, y_train, y_test
 
-shuffled_sequences, shuffled_labels = generate_all_data(amp_aa_sequences, non_amp_aa_sequences)
+shuffled_sequences, shuffled_labels = generate_all_data(amp_aa_sequences, non_amp_aa_sequences, torch_save=True)
 X_train, X_test, y_train, y_test = train_test_split(shuffled_sequences, shuffled_labels)
 print(len(X_train))
 print(len(X_test))

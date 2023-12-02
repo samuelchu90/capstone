@@ -5,6 +5,8 @@ from torch import nn
 import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 
+#CLS, training, test split, unbalanced dataset AMPS vs nonAMPS
+
 class MLP(nn.Module):
   '''
     Multilayer Perceptron.
@@ -43,7 +45,7 @@ model.load_state_dict(model_arc['state_dict'], strict=True)
 print(model)
 
 def threshold(tensor):
-    return (tensor>0.5).int()
+    return (tensor>0.5).float()
 
 class FullModel(torch.nn.Module):
     def __init__(self, bert):
@@ -51,9 +53,16 @@ class FullModel(torch.nn.Module):
         self.bert = bert
         self.linear = nn.Linear(768, 1)
 
+    #add threshold if we only want forward pass, but for training we don't want threshold.
+    #forward always wants to return a float.
     def forward(self, x):
         mask = (x>0).float()
         pooler_output = self.bert(x, attention_mask=mask).pooler_output
+        linear_output = self.linear(pooler_output)
+        return torch.sigmoid(linear_output)
+
+    def predict(self, x):
+        pooler_output = self.bert(x).pooler_output
         linear_output = self.linear(pooler_output)
         sigmoid_output = torch.sigmoid(linear_output)
         return threshold(sigmoid_output)
@@ -101,14 +110,12 @@ optimizer = optim.Adam(full_model.parameters(), lr=.00002)
 num_epochs = 1
 for epoch in range(num_epochs):
     for sequences, labels in dataloader:
-        sequences = torch.tensor(sequences, dtype=int)
-        labels = torch.tensor(labels, dtype=int)
+        sequences = sequences.int()
+        labels = labels.float()
         optimizer.zero_grad()
         outputs = full_model(sequences)
         outputs = outputs.squeeze(1)
-        outputs = torch.tensor(outputs, dtype=int)
         print(outputs.shape)
         loss = loss_fn(outputs, labels)
         loss.backward()
         optimizer.step()
-
